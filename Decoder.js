@@ -45,9 +45,6 @@ function Decode(fPort, bytes, variables) {
       case "02":
         data.Humidity = Number(hexToFloat32(value).toFixed(3));
         break;
-      case "03":
-        data.Pressure = Number(hexToFloat32(value).toFixed(3));
-        break;
       case "04":
         data.PM1_0 = parseInt(value2, 16);
         break;
@@ -58,36 +55,47 @@ function Decode(fPort, bytes, variables) {
         data.PM10 = parseInt(value2, 16);
         break;
       case "07":
-        data.CO2 =
-          parseInt(value2.substring(0, 2), 16) * 256 +
-          parseInt(value2.substring(2, 4), 16);
+          if(value2.substring(0,4) !== 'ffff'){
+  		 data.CO2 =	parseInt(value2.substring(0, 2), 16) * 256 + parseInt(value2.substring(2, 4), 16);
+		}
         break;
       case "08":
         data.TVOC = Number(hexToFloat32(value).toFixed(3));
         break;
       case "09":
-		data.Light = parseInt(value2, 16);
+		data.Light = parseInt(value2, 16)/100;
         break;
       case "10":
-        data.Light = parseInt(value2, 16);
+        //NONE
         break;
       case "11":
-        data.O3 = parseInt(value2.substring(0, 2), 16) * 256 +
-          parseInt(value2.substring(2, 4), 16);
+        data.H2S = (parseInt(value2.substring(0, 2), 16) * 256 +
+          parseInt(value2.substring(2, 4), 16))/100
         break;
-      case "12":
-        data.CO = parseInt(value2.substring(0, 2), 16) * 256 +
-          parseInt(value2.substring(2, 4), 16);
+	  case "12":
+        data.NH3 = (parseInt(value2.substring(0, 2), 16) * 256 +
+          parseInt(value2.substring(2, 4), 16))/100
         break;
       case "13":
+        data.CO = (parseInt(value2.substring(0, 2), 16) * 256 +
+          parseInt(value2.substring(2, 4), 16))/10;
+        break;
+      case "14":
         data.HCHO = parseInt(value2.substring(0, 2), 16) * 256 +
           parseInt(value2.substring(2, 4), 16);
         break;
-      case "14":
+      case "15":
+        data.O3 = parseInt(value2.substring(0, 2), 16) * 256 +
+          parseInt(value2.substring(2, 4), 16);
+        break;
+      case "16":
         data.NO2 = (parseInt(value2.substring(0, 2), 16) * 256 +
           parseInt(value2.substring(2, 4), 16))/1000
         break;
-      case "15":
+	  case "17":
+        data.SO2 = (parseInt(value2.substring(0, 2), 16) * 256 +
+          parseInt(value2.substring(2, 4), 16))/1000
+        break;
       default:
         break;
     }
