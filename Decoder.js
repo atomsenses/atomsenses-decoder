@@ -3,7 +3,7 @@
  * 
  * Copyright 2025 AS
  * 
- * @product AS Series
+ * @product AS & ES Series
  * @params
  *     - fPort: 85
  *     - bytes: [0x01, 0x75, 0x64]
