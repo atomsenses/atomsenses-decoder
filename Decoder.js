@@ -4,31 +4,29 @@
  * Copyright 2025 AS
  * 
  * @product AS & ES Series
- * @params
- *     - fPort: 85
- *     - bytes: [0x01, 0x75, 0x64]
  */
-function Decode(fPort, bytes) {
+function decodeUplink(input) {
+  var fPort = input.fPort;
+  var bytes = input.bytes;
   var hexString = bytesToHex(bytes);
-
-  // 验证输入是否为有效的十六进制字符串
-  if (!/^[0-9a-fA-F]+$/.test(hexString)) {
-    return { message: "Invalid hex string" };
-  }
-
-  // 确保字符串长度为10的倍数（每10个字符为一组）
-  if (hexString.length % 10 !== 0) {
-    return { message: "Hex string length must be a multiple of 10" };
-  }
-
   var data = {};
 
+  // Validate hex format
+  if (!/^[0-9a-fA-F]+$/.test(hexString)) {
+    return { data: { message: "Invalid hex string" } };
+  }
+
+  // Validate length (5 bytes per group)
+  if (hexString.length % 10 !== 0) {
+    return { data: { message: "Hex length must be multiple of 10" } };
+  }
+
+  // Process each 5-byte group
   for (var i = 0; i < hexString.length; i += 10) {
-    var endIndex = i + 10;
-    var group = hexString.substring(i, endIndex);
-    var type = group.substring(0, 2);
-    var value = group.substring(2, 10).toLowerCase();
-    var value2 = group.substring(6, 10).toLowerCase();
+    var group = hexString.substr(i, 10);
+    var type = group.substr(0, 2);
+    var value = group.substr(2, 8).toLowerCase();
+    var value2 = group.substr(6, 4).toLowerCase();
 
     if (value === "ffffffff" || value2 === "ffff") continue;
 
@@ -86,7 +84,8 @@ function Decode(fPort, bytes) {
         break;
     }
   }
-  return data;
+
+  return { data: data };
 }
 
 /* ******************************************
