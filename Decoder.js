@@ -82,6 +82,11 @@ function decodeUplink(input) {
       case "20":
         data.Voltage = Number(hexToFloat32(value).toFixed(3));
         break;
+      case "22":
+		data.PIR = value2 === "0001" ? "ON" : "OFF";
+        break;
+      default:
+        break;				  
     }
   }
 
