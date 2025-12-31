@@ -1,82 +1,105 @@
-# Protocol Documentation
+Here's the refined GitHub documentation in a more organized and human-readable format. I've structured it with clear sections, improved formatting, and added explanations to enhance readability.
 
-## Command Example
+---
 
-The command frame follows a fixed format:
+# Command Structure & CRC Verification
 
-| Byte Position | Description | Example Value | Notes |
-|--------------|-------------|---------------|-------|
-| 0-1 | **Header** | `0xFF 0x00` | Fixed header bytes |
-| 2 | **Command Byte** | `0xA0` | Indicates function (e.g., modify data upload period) |
-| 3-4 | **Data Bytes** | `0x01 0x2C` | Represents period in seconds (big-endian format). Example: `0x012C` = 300 seconds |
-| 5-6 | **Checksum** | (Calculated) | Modbus CRC-16, low byte first |
+## 📋 Command Example
 
-**Example Frame:** `FF 00 A0 01 2C [CRC_Low] [CRC_High]`
+A command frame is composed of several parts. Below is an example for modifying the device's data upload period:
 
-## CRC Verification Explanation
+| Byte Position | Value (Hex) | Description |
+| :--- | :--- | :--- |
+| **Header** | `FF 00` | Fixed two-byte start sequence. |
+| **Command** | `A0` | Function byte. `A0` specifies "modify upload period". |
+| **Data** | `01 2C` | Parameter bytes. Represents the new period in **seconds**.<br>`0x012C` = 300 seconds. |
+| **Checksum** | `[Low Byte] [High Byte]` | Two-byte CRC-16 checksum (Modbus protocol).<br>**Format:** Low byte first (little-endian). |
 
-Modbus CRC-16 calculation algorithm:
+**Complete Example Packet:** `FF 00 A0 01 2C [CRC Low] [CRC High]`
 
-1. **Initialize** CRC register to `0xFFFF`
-2. **XOR** next data byte with low byte of CRC register
-3. **Process each bit** (8 times):
-   - Right shift register by 1 bit
-   - If shifted-out bit = 0: continue
-   - If shifted-out bit = 1: XOR register with polynomial `0xA001`
-4. **Repeat steps 2-3** for all bytes in frame
-5. **Swap bytes**: Exchange high and low bytes of final CRC value
+---
 
-**Polynomial:** `0xA001` (hex) = `1010 0000 0000 0001` (binary)
+## 🔍 CRC-16 Verification (Modbus Standard)
 
-## C Sample Code
+The checksum is a CRC-16 calculated using the **Modbus polynomial (0xA001)**. Here is the step-by-step algorithm:
+
+1.  **Initialize:** Start with a 16-bit CRC register set to `0xFFFF`.
+2.  **Process Each Byte:** For each byte in the frame (from header to data):
+    a.  **XOR** the byte with the low byte of the CRC register.
+    b.  **Process 8 Bits:** For each bit in the byte:
+        *   Shift the CRC register **right by 1 bit**.
+        *   If the shifted-out (LSB) bit was **1**, XOR the register with the polynomial `0xA001`.
+3.  **Finalize:** After all bytes are processed, **swap** the high and low bytes of the resulting CRC register. This final 16-bit value is your checksum.
+
+**Note:** This is a standard Modbus CRC-16. Many libraries provide a function to compute this directly.
+
+---
+
+## 💻 C Language Sample Code
+
+The following code demonstrates how to calculate the CRC for a sample Modbus RTU query frame.
 
 ```c
 #include <stdio.h>
 
-int main(void) {
-    // Example Modbus RTU frame: 01 03 00 00 00 0A C5 CD
-    unsigned short tmp = 0xffff;
-    unsigned short val = 0;
-    unsigned char buff[6] = {0};
-    
-    buff[0] = 0x01;  // Slave address
-    buff[1] = 0x03;  // Function code (read holding registers)
-    buff[2] = 0x00;  // Starting address high byte
-    buff[3] = 0x00;  // Starting address low byte
-    buff[4] = 0x00;  // Quantity high byte
-    buff[5] = 0x0A;  // Quantity low byte (10 registers)
-    
-    for (int n = 0; n < 6; n++) {
-        tmp = buff[n] ^ tmp;
-        printf("XOR result: %x\n", tmp);
-        
-        for (int i = 0; i < 8; i++) {  // Process each bit (8 bits per byte)
-            printf("Iteration: %d\tLSB: %d", i * n, tmp & 0x01);
-            printf("\tCurrent tmp: %x\n", tmp);
-            
-            if (tmp & 0x01) {
-                tmp = tmp >> 1;
-                tmp = tmp ^ 0xa001;
+/*
+ * Calculates Modbus CRC-16 (polynomial 0xA001) for a given byte array.
+ * - `data`: Pointer to the byte array.
+ * - `length`: Number of bytes in the array.
+ * Returns: The 16-bit CRC, with high and low bytes swapped.
+ */
+unsigned short calculateModbusCRC(unsigned char *data, int length) {
+    unsigned short crc = 0xFFFF; // Step 1: Initialize CRC
+
+    for (int byteIndex = 0; byteIndex < length; byteIndex++) {
+        // Step 2a: XOR byte with CRC low byte
+        crc ^= data[byteIndex];
+
+        // Step 2b: Process each of the 8 bits
+        for (int bitIndex = 0; bitIndex < 8; bitIndex++) {
+            // Check if LSB (the bit to be shifted out) is 1
+            if (crc & 0x0001) {
+                crc = (crc >> 1) ^ 0xA001; // Shift and XOR with polynomial
             } else {
-                tmp = tmp >> 1;
+                crc = crc >> 1; // Just shift right
             }
         }
-        printf("CRC after processing data %d: %x\n", n, tmp);
     }
-    
-    /* Swap high and low bytes */
-    val = tmp >> 8;
-    val = val | (tmp << 8);
-    
-    printf("Final CRC (swapped): %X\n", val);
-    printf("Expected CRC: C5CD\n");
-    
+
+    // Step 3: Swap high and low bytes (or return as little-endian)
+    return (crc << 8) | (crc >> 8);
+}
+
+int main(void) {
+    // Example Modbus RTU query frame: "Read Holding Registers"
+    // Device ID: 0x01, Function Code (Read): 0x03, Start Address: 0x0000, Quantity: 0x000A (10 registers)
+    unsigned char frame[] = {0x01, 0x03, 0x00, 0x00, 0x00, 0x0A};
+    int frameLength = 6;
+
+    // Calculate the CRC for the frame
+    unsigned short crcResult = calculateModbusCRC(frame, frameLength);
+
+    // Expected CRC for this frame is 0xC5CD (low byte first: 0xCD 0xC5)
+    printf("Calculated CRC: 0x%04X\n", crcResult);
+    printf("Expected CRC (for verification): 0xC5CD\n");
+
+    // Print the full RTU frame with CRC in transmission order (low byte first)
+    printf("Full RTU Frame (hex): ");
+    for(int i=0; i < frameLength; i++) {
+        printf("%02X ", frame[i]);
+    }
+    printf("%02X %02X\n", (crcResult & 0xFF), (crcResult >> 8));
+
     return 0;
 }
 ```
 
-## Notes
+### Key Points in the Code:
+1.  **Modular Function:** The CRC calculation is encapsulated in `calculateModbusCRC()` for reuse.
+2.  **Clear Logic:** The nested loops clearly separate byte processing from bit processing.
+3.  **Final Swap:** The function returns the CRC with bytes swapped, ready for network transmission (little-endian order).
+4.  **Example Frame:** The main function uses a standard Modbus query to demonstrate the calculation. The expected result `0xC5CD` confirms the algorithm is correct.
 
-- **Endianness**: Protocol uses big-endian for data, but Modbus CRC has low-byte-first output
-- **Checksum Coverage**: CRC is calculated over all bytes except the CRC field itself
-- **Polynomial**: Modbus uses `0xA001` polynomial (reversed form of `0x8005`)
+---
+
+**Summary:** This document explains the command packet format, details the CRC-16 verification algorithm, and provides a practical C code example to generate the correct checksum for your communication protocol.
