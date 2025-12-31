@@ -59,13 +59,13 @@ function decodeUplink(input) {
         data.Light = parseInt(value2, 16) / 100;
         break;
       case "11":
-        data.H2S = ((parseInt(value2.substr(0, 2), 16) << 8) + parseInt(value2.substr(2, 2), 16)) / 100;
+        data.H2S = ((parseInt(value2.substr(0, 2), 16) << 8) + parseInt(value2.substr(2, 2), 16)) / 10;
         break;
       case "12":
         data.NH3 = ((parseInt(value2.substr(0, 2), 16) << 8) + parseInt(value2.substr(2, 2), 16)) / 100;
         break;
       case "13":
-        data.CO = ((parseInt(value2.substr(0, 2), 16) << 8) + parseInt(value2.substr(2, 2), 16)) / 10;
+        data.CO = (parseInt(value2.substr(0, 2), 16) << 8) + parseInt(value2.substr(2, 2), 16);
         break;
       case "14":
         data.HCHO = (parseInt(value2.substr(0, 2), 16) << 8) + parseInt(value2.substr(2, 2), 16);
@@ -82,11 +82,14 @@ function decodeUplink(input) {
       case "20":
         data.Voltage = Number(hexToFloat32(value).toFixed(3));
         break;
+      case "21": 
+         data.Battery = Number(hexToFloat32(value).toFixed(1)); 
+         break; 
       case "22":
-		data.PIR = value2 === "0001" ? "ON" : "OFF";
+        data.PIR = value2 === "0001" ? "ON" : "OFF";
         break;
       default:
-        break;				  
+        break;
     }
   }
 
