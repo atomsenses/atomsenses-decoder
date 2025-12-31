@@ -1,94 +1,68 @@
-Explanation of CKC Calculation
-Command Example:
+## Command Example
 
-The header command follows a fixed format: 0xFF 0x00.
+The command follows a fixed format:
 
-The command byte is a special function byte. 0xA0 indicates that the current command is used to modify the data upload period.
+**Header:** `0xFF 0x00`  
+**Command Byte:** `0xA0` (indicates modifying the data upload period)  
+**Data Bytes:** Example `0x012C` (sets period to 300 seconds)  
+**Checksum:** Last two bytes use Modbus CRC with low-byte-first (big-endian mode)
 
-The data bytes represent the adjusted period size in seconds. For example, 0x012C indicates that the period is to be adjusted to 300 seconds.
+## CRC Verification
 
-The last two bytes are the checksum following the Modbus protocol, with the low byte first, indicating that the protocol is in big-endian mode.
+### Calculation Steps:
+1. Initialize CRC register to `0xFFFF`
+2. XOR first 8-bit data byte with low byte of register
+3. Right-shift register one bit, padding high bit with 0
+4. Check shifted-out bit:
+   - If `0`: repeat step 3
+   - If `1`: XOR register with polynomial `0xA001`
+5. Repeat steps 3-4 for all 8 bits
+6. Repeat steps 2-5 for each subsequent byte
+7. Swap high/low bytes of final 16-bit CRC register
 
-CRC Verification Explanation:
+## C Sample Code
 
-Initialize a CRC register in hexadecimal format with the value 0xFFFF.
-
-XOR the first 8-bit binary data (here 0xFF) with the low byte of the register, and store the result (0xFF) in the register.
-
-Shift the contents of the register right by one bit, padding the high bit with 0, and check the shifted-out bit.
-
-If the shifted-out bit is 0, repeat step 3. If it is 1, XOR the register with the polynomial 0xA001 (1010 0000 0000 0001).
-
-Repeat steps 3 and 4 until 8 shifts are completed, ensuring all 8 bits of the data are processed.
-
-Repeat steps 2–5 for the next byte in the data frame.
-
-After processing all bytes, swap the high and low bytes of the resulting 16-bit CRC register.
-
-C Sample Code:
-
+```c
 #include <stdio.h>
 
 int main(void) {
-
-    // Tx:000000-01 03 00 00 00 0A C5 CD
-
-    unsigned short tmp = 0xffff;
-
-    unsigned short val = 0;
-
-    unsigned char buff[6] = {0};
-
-    buff[0] = 0x01;
-
-    buff[1] = 0x03;
-
-    buff[2] = 0x00;
-
-    buff[3] = 0x00;
-
-    buff[4] = 0x00;
-
-    buff[5] = 0x0A;
-
-    for (int n = 0; n < 6; n++) {
-
-        tmp = buff[n] ^ tmp;
-
-        printf("XOR result: %x\n", tmp);
-
-        for (int i = 0; i < 8; i++) {  /* 8 refers to the 8 bits in each char type */
-
-            printf("Iteration: %d\t\tLSB: %d", i * n, tmp & 0x01);
-
-            printf("\tCurrent tmp: %x\n", tmp);
-
-            if (tmp & 0x01) {
-
-                tmp = tmp >> 1;
-
-                tmp = tmp ^ 0xa001;
-
-            } else {
-
-                tmp = tmp >> 1;
-
-            }
-
-        }
-
-        printf("CRC after processing data %d: %x\n", n, tmp);
-
-    }
-
-    /* Swap the high and low bytes of the CRC checksum */
-
-    val = tmp >> 8;
-
-    val = val | (tmp << 8);
-
-    printf("After swapping: %X\n", val);
-
-    return 0;
+    // Tx:000000-01 03 00 00 00 0A C5 CD
+    unsigned short tmp = 0xffff;
+    unsigned short val = 0;
+    unsigned char buff[6] = {0};
+    
+    buff[0] = 0x01;
+    buff[1] = 0x03;
+    buff[2] = 0x00;
+    buff[3] = 0x00;
+    buff[4] = 0x00;
+    buff[5] = 0x0A;
+    
+    for (int n = 0; n < 6; n++) {
+        tmp = buff[n] ^ tmp;
+        printf("XOR result: %x\n", tmp);
+        
+        for (int i = 0; i < 8; i++) {  /* Process 8 bits per char */
+            printf("Iteration: %d\t\tLSB: %d", i * n, tmp & 0x01);
+            printf("\tCurrent tmp: %x\n", tmp);
+            
+            if (tmp & 0x01) {
+                tmp = tmp >> 1;
+                tmp = tmp ^ 0xa001;
+            } else {
+                tmp = tmp >> 1;
+            }
+        }
+        printf("CRC after processing data %d: %x\n", n, tmp);
+    }
+    
+    /* Swap CRC bytes */
+    val = tmp >> 8;
+    val = val | (tmp << 8);
+    printf("After swapping: %X\n", val);
+    
+    return 0;
+}
+```
 
 }
