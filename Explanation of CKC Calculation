@@ -1,4 +1,4 @@
-Command Example:
+##Command Example:##
 
 The header command follows a fixed format: 0xFF 0x00.
 
@@ -8,7 +8,7 @@ The data bytes represent the adjusted period size in seconds. For example, 0x012
 
 The last two bytes are the checksum following the Modbus protocol, with the low byte first, indicating that the protocol is in big-endian mode.
 
-CRC Verification Explanation:
+##CRC Verification Explanation:##
 
 Initialize a CRC register in hexadecimal format with the value 0xFFFF.
 
@@ -24,7 +24,7 @@ Repeat steps 2–5 for the next byte in the data frame.
 
 After processing all bytes, swap the high and low bytes of the resulting 16-bit CRC register.
 
-C Sample Code:
+##C Sample Code:##
 
 #include <stdio.h>
 
