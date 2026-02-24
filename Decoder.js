@@ -88,6 +88,18 @@ function decodeUplink(input) {
       case "22":
         data.PIR = value2 === "0001" ? "ON" : "OFF";
         break;
+      case "26":
+        var windSpeedHex = group.substring(2, 6);
+        var windLevelHex = group.substring(6, 10);
+        data.WindSpeed = parseFloat(parseInt(windSpeedHex, 16) / 10).toFixed(1) + " m/s";
+        data.WindLevel = parseInt(windLevelHex, 16);
+        break;
+      case "27":
+        var windDirectionHex = group.substring(2, 6);
+        var windDirection16Hex = group.substring(6, 10);
+        data.WindDirection = parseFloat(parseInt(windDirectionHex, 16) / 10).toFixed(1) + "°";
+        data.WindDirection16 = parseInt(windDirection16Hex, 16);
+        break;
       default:
         break;
     }
@@ -107,7 +119,6 @@ function bytesToHex(bytes) {
   return hex.join('');
 }
 
-// 替换原 hexToFloat32，使用纯 JavaScript 实现
 function hexToFloat32(hex) {
   var int = parseInt(hex, 16);
   var byte1 = (int >> 24) & 0xff;
