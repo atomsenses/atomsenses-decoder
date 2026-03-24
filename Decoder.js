@@ -79,6 +79,9 @@ function decodeUplink(input) {
       case "17":
         data.SO2 = ((parseInt(value2.substr(0, 2), 16) << 8) + parseInt(value2.substr(2, 2), 16)) / 1000;
         break;
+      case "18":
+        data.O2 = ((parseInt(value2.substr(0, 2), 16) << 8) + parseInt(value2.substr(2, 2), 16)) / 100;
+        break;
       case "20":
         data.Voltage = Number(hexToFloat32(value).toFixed(3));
         break;
@@ -119,6 +122,7 @@ function bytesToHex(bytes) {
   return hex.join('');
 }
 
+// 替换原 hexToFloat32，使用纯 JavaScript 实现
 function hexToFloat32(hex) {
   var int = parseInt(hex, 16);
   var byte1 = (int >> 24) & 0xff;
