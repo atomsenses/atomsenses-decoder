@@ -82,6 +82,9 @@ function decodeUplink(input) {
       case "18":
         data.O2 = ((parseInt(value2.substr(0, 2), 16) << 8) + parseInt(value2.substr(2, 2), 16)) / 100;
         break;
+      case "19":
+        data.CH4 = ((parseInt(value2.substr(0, 2), 16) << 8) + parseInt(value2.substr(2, 2), 16));
+        break;
       case "20":
         data.Voltage = Number(hexToFloat32(value).toFixed(3));
         break;
