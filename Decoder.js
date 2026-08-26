@@ -1,7 +1,7 @@
 /**
  * Payload Decoder for Chirpstack and Milesight network server
  * 
- * Copyright 2025 AS
+ * Copyright 2026 AS
  * 
  * @product AS & ES Series
  */
