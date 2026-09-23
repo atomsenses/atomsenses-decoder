@@ -84,7 +84,7 @@ function decodeUplink(input) {
         break;
       case "19":
         data.CH4 = ((parseInt(value2.substr(0, 2), 16) << 8) + parseInt(value2.substr(2, 2), 16));
-        break;
+        break;        
       case "20":
         data.Voltage = Number(hexToFloat32(value).toFixed(3));
         break;
@@ -106,6 +106,22 @@ function decodeUplink(input) {
         data.WindDirection = parseFloat(parseInt(windDirectionHex, 16) / 10).toFixed(1) + "°";
         data.WindDirection16 = parseInt(windDirection16Hex, 16);
         break;
+      case "30":
+        data.BaseBlue = parseInt(group.substring(2, 6), 16);
+        data.BaseIR   = parseInt(group.substring(6, 10), 16);
+        break;
+      case "31":
+        data.NetBlue = parseInt(group.substring(2, 6), 16);
+        data.NetIR   = parseInt(group.substring(6, 10), 16);
+        break;
+      case "32":
+        var st = parseInt(group.substring(6, 10), 16);
+        var states = [];
+        if (st & 1) states.push("SMOKE");
+        if (st & 2) states.push("SENSOR_FAULT");
+        if (st & 4) states.push("LOW_BATTERY");
+        data.Status = states.length ? states.join("+") : "NORMAL";
+        break;       
       default:
         break;
     }
