@@ -56,7 +56,7 @@ function decodeUplink(input) {
         data.TVOC = Number(hexToFloat32(value).toFixed(3));
         break;
       case "09":
-        data.Light = parseInt(value2, 16) / 100;
+        data.Light = parseInt(value2, 16);
         break;
       case "11":
         data.H2S = ((parseInt(value2.substr(0, 2), 16) << 8) + parseInt(value2.substr(2, 2), 16)) / 10;
@@ -93,6 +93,9 @@ function decodeUplink(input) {
          break; 
       case "22":
         data.PIR = value2 === "0001" ? "ON" : "OFF";
+        break;
+      case "23":
+        data.LeakStatus = (parseInt(value.substring(6, 8), 16) === 1) ? "1" : "0";
         break;
       case "26":
         var windSpeedHex = group.substring(2, 6);
